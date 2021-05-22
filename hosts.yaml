@@ -1,0 +1,5 @@
+---
+R1:
+  name: R1
+  platform: ios
+  mgmt: "192.168.10.168"

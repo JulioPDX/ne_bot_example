@@ -1,1 +1,3 @@
-# ne_bot_example
+### readme
+
+activate venv: `source ~/.venvs/slackbot/bin/activate`
