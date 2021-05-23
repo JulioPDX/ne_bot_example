@@ -17,31 +17,38 @@ slack_events_adapter = SlackEventAdapter(
 # Initialize a Web API client
 slack_web_client = WebClient(token=os.environ.get("SLACK_TOKEN"))
 
+
 def flip_coin(channel):
-    """Craft the CoinBot, flip the coin and send the message to the channel
+    """
+    Craft the CoinBot, flip the coin and send the message to the channel
     """
     # Create a new CoinBot
     coin_bot = CoinBot(channel)
 
     # Get the onboarding message payload
-    message = coin_bot.get_message_payload()
+    my_message = coin_bot.get_message_payload()
 
     # Post the onboarding message in Slack
-    slack_web_client.chat_postMessage(**message)
+    slack_web_client.chat_postMessage(**my_message)
+
 
 def get_network_info(channel):
     """
     Craft the NetBot
     """
     net_bot = NetBot(channel)
-    message = net_bot.get_message_payload()
-    slack_web_client.chat_postMessage(**message)
+    my_message = net_bot.get_message_payload()
+    file_output = net_bot.get_file_payload()
+    slack_web_client.chat_postMessage(**my_message)
+    slack_web_client.files_upload(**file_output)
+
 
 # When a 'message' event is detected by the events adapter, forward that payload
 # to this function.
 @slack_events_adapter.on("message")
 def message(payload):
-    """Parse the message event, and if the activation string is in the text,
+    """
+    Parse the message event, and if the activation string is in the text,
     simulate something and send result
     """
 
@@ -62,7 +69,7 @@ def message(payload):
         # flipping a coin to the channel
         return flip_coin(channel_id)
 
-    if "hey netbot get network interfaces" in text.lower():
+    if "netbot get network interfaces" in text.lower():
         channel_id = event.get("channel")
         return get_network_info(channel_id)
 
@@ -79,4 +86,4 @@ if __name__ == "__main__":
 
     # Run your app on your externally facing IP address on port 3000 instead of
     # running it on localhost, which is traditional for development.
-    app.run(host='0.0.0.0', port=3000)
+    app.run(host="0.0.0.0", port=3000)
