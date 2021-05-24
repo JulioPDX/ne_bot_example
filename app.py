@@ -17,6 +17,9 @@ slack_events_adapter = SlackEventAdapter(
 # Initialize a Web API client
 slack_web_client = WebClient(token=os.environ.get("SLACK_TOKEN"))
 
+# Define bot ID so it will not respond to itself
+BOT_ID = slack_web_client.api_call("auth.test")["user_id"]
+
 
 def flip_coin(channel):
     """
@@ -32,11 +35,20 @@ def flip_coin(channel):
     slack_web_client.chat_postMessage(**my_message)
 
 
-def get_network_info(channel):
+def send_me_help(channel, device_name):
     """
-    Craft the NetBot
+    run send_help method
     """
-    net_bot = NetBot(channel)
+    net_bot = NetBot(channel, device_name)
+    file_output = net_bot.send_help()
+    slack_web_client.files_upload(**file_output)
+
+
+def get_network_info(channel, device_name):
+    """
+    run the get_message_payload and get_file_upload method
+    """
+    net_bot = NetBot(channel, device_name)
     my_message = net_bot.get_message_payload()
     file_output = net_bot.get_file_payload()
     slack_web_client.chat_postMessage(**my_message)
@@ -52,26 +64,42 @@ def message(payload):
     simulate something and send result
     """
 
-    # Get the event data from the payload
+    # Get various portions of message
     event = payload.get("event", {})
-
-    # Get the text from the event that came through
     text = event.get("text")
+    user_id = event.get("user")
+    timestamp = event.get("ts")
+    channel_id = event.get("channel")
 
-    # Check and see if the activation phrase was in the text of the message.
-    # If so, execute the code to flip a coin.
-    if "hey netbot flip coin" in text.lower():
-        # Since the activation phrase was met, get the channel ID that the event
-        # was executed on
-        channel_id = event.get("channel")
+    # Making sure the bot doesnt respond to itself
+    if BOT_ID != user_id:
+        # Check and see if the activation phrase was in the text of the message.
+        # If so, execute the code to flip a coin.
+        if "hey netbot flip coin" in text.lower():
+            # Execute the flip_coin function and send the results of
+            # flipping a coin to the channel
+            return flip_coin(channel_id)
 
-        # Execute the flip_coin function and send the results of
-        # flipping a coin to the channel
-        return flip_coin(channel_id)
+        if "netbot get network interfaces" in text.lower():
+            full_text = text.split()
+            device = full_text[-1]
+            my_device = device.replace("device=", "")
+            slack_web_client.reactions_add(
+                channel=channel_id, name="robot_face", timestamp=timestamp
+            )
+            slack_web_client.reactions_add(
+                channel=channel_id, name="rocket", timestamp=timestamp
+            )
+            return get_network_info(channel_id, device_name=my_device)
 
-    if "netbot get network interfaces" in text.lower():
-        channel_id = event.get("channel")
-        return get_network_info(channel_id)
+        if "netbot help" in text.lower():
+            slack_web_client.reactions_add(
+                channel=channel_id, name="sos", timestamp=timestamp
+            )
+            slack_web_client.reactions_add(
+                channel=channel_id, name="interrobang", timestamp=timestamp
+            )
+            return send_me_help(channel_id, device_name="")
 
 
 if __name__ == "__main__":

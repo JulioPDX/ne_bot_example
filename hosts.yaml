@@ -3,3 +3,7 @@ R1:
   name: R1
   platform: ios
   mgmt: "192.168.10.168"
+ArubaCX:
+  name: ArubaCX
+  platform: aoscx
+  mgmt: "192.168.10.169"
